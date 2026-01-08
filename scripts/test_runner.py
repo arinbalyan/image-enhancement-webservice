@@ -5,6 +5,7 @@ Processes images from test_images/ and outputs to test_output/.
 """
 
 import sys
+import time
 from pathlib import Path
 from config.settings import get_settings
 from algorithms.manager import AlgorithmManager
@@ -40,7 +41,7 @@ def run_tests(input_dir: str = 'test_images', output_dir: str = 'test_output'):
     images = list_images(input_dir, recursive=False)
 
     if not images:
-        print(f"\n⚠️  No test images found in: {input_dir}")
+        print(f"\n[WARNING] No test images found in: {input_dir}")
         print(f"Please add test images to: {input_dir}/")
         return {
             'total': 0,
@@ -49,9 +50,9 @@ def run_tests(input_dir: str = 'test_images', output_dir: str = 'test_output'):
             'success_rate': 0.0
         }
 
-    print(f"\n📁 Test directory: {input_dir}")
-    print(f"📁 Output directory: {output_dir}")
-    print(f"📷 Found {len(images)} test image(s)")
+    print(f"\n[DIR] Test directory: {input_dir}")
+    print(f"[DIR] Output directory: {output_dir}")
+    print(f"[IMAGE] Found {len(images)} test image(s)")
     print("=" * 60)
 
     # Process each image
@@ -59,8 +60,11 @@ def run_tests(input_dir: str = 'test_images', output_dir: str = 'test_output'):
         'total': len(images),
         'success': 0,
         'failed': 0,
-        'errors': []
+        'errors': [],
+        'timings': []
     }
+
+    overall_start = time.time()
 
     for i, image_path in enumerate(images, 1):
         print(f"\n[{i}/{len(images)}] Processing: {Path(image_path).name}")
@@ -85,6 +89,7 @@ def run_tests(input_dir: str = 'test_images', output_dir: str = 'test_output'):
 
             # Enhance image
             print("  Enhancing...")
+            start_time = time.time()
 
             output_path = manager.enhance_image(
                 image_path=image_path,
@@ -93,18 +98,27 @@ def run_tests(input_dir: str = 'test_images', output_dir: str = 'test_output'):
                 preserve_original=True
             )
 
-            print(f"  ✅ Success: {Path(output_path).name}")
+            duration = time.time() - start_time
+            results['timings'].append({
+                'image': Path(image_path).name,
+                'duration': duration
+            })
+
+            print(f"  [OK] Success: {Path(output_path).name}")
+            print(f"  [TIME] Duration: {duration:.2f}s")
 
             # Update results
             results['success'] += 1
 
         except Exception as e:
-            print(f"  ❌ Failed: {e}")
+            print(f"  [ERROR] Failed: {e}")
             results['failed'] += 1
             results['errors'].append({
                 'image': Path(image_path).name,
                 'error': str(e)
             })
+
+    overall_duration = time.time() - overall_start
 
     # Print summary
     print("\n" + "=" * 60)
@@ -118,6 +132,15 @@ def run_tests(input_dir: str = 'test_images', output_dir: str = 'test_output'):
         success_rate = (results['success'] / results['total']) * 100
         print(f"Success rate: {success_rate:.1f}%")
 
+    if results['timings']:
+        avg_duration = sum(t['duration'] for t in results['timings']) / len(results['timings'])
+        min_duration = min(t['duration'] for t in results['timings'])
+        max_duration = max(t['duration'] for t in results['timings'])
+        print(f"Average time per image: {avg_duration:.2f}s")
+        print(f"Fastest image: {min_duration:.2f}s")
+        print(f"Slowest image: {max_duration:.2f}s")
+
+    print(f"Total processing time: {overall_duration:.2f}s")
     print(f"\nEnhanced images saved to: {output_dir}")
 
     # Print errors if any

@@ -5,6 +5,7 @@ Uses basicsr package and pre-trained models from Real-ESRGAN repo.
 """
 
 from typing import Dict, Any, Optional
+from pathlib import Path
 import torch
 import numpy as np
 from PIL import Image
@@ -25,7 +26,10 @@ class RealESRGANEnhancer(BaseEnhancer):
         """Load Real-ESRGAN model."""
         try:
             from basicsr.archs.rrdbnet_arch import RRDBNet
-            from basicsr.models.realesrgan_model import RealESRGANer
+            from realesrgan import RealESRGANer
+            import cv2
+            from basicsr.utils import img2tensor
+            import torch
 
             model_path = self._download_model(self.model_name)
 
@@ -39,28 +43,72 @@ class RealESRGANEnhancer(BaseEnhancer):
                 self.model_loaded = True
                 return
 
+            # Determine device
+            if torch.cuda.is_available() and self.config.get('use_gpu', True):
+                self.device = torch.device('cuda')
+                print(f"Using GPU: {torch.cuda.get_device_name(0)}")
+            else:
+                self.device = torch.device('cpu')
+                print(f"Using CPU (CUDA not available)")
+
             # Load pre-trained weights
             print(f"Loading Real-ESRGAN model: {model_path}")
 
+            # Load weights first to check structure
+            loadnet = torch.load(model_path, map_location=self.device)
+
+            # Create model architecture based on model name
+            # RealESRGAN_x4plus uses RRDBNet architecture
+            if self.model_name == 'RealESRGAN_x4plus':
+                model = RRDBNet(
+                    num_in_ch=3,
+                    num_out_ch=3,
+                    num_feat=64,
+                    num_block=23,
+                    num_grow_ch=32,
+                    scale=self.upscale_factor
+                )
+            else:
+                # Default to RRDBNet for other models
+                model = RRDBNet(
+                    num_in_ch=3,
+                    num_out_ch=3,
+                    num_feat=64,
+                    num_block=23,
+                    num_grow_ch=32,
+                    scale=self.upscale_factor
+                )
+
+            # Load state dict from checkpoint
+            # Real-ESRGAN checkpoints use 'params' or 'params_ema' keys
+            if 'params_ema' in loadnet:
+                model.load_state_dict(loadnet['params_ema'])
+            elif 'params' in loadnet:
+                model.load_state_dict(loadnet['params'])
+            else:
+                model.load_state_dict(loadnet)
+            
+            model = model.to(self.device)
+            model.eval()
+            
+            # Create RealESRGANer
             self.model = RealESRGANer(
                 scale=self.upscale_factor,
                 model_path=model_path,
-                model=self.model_name,
-                tile=0,
+                model=model,
+                tile=400,  # Tile processing for memory efficiency
                 tile_pad=10,
-                pre_pad=0,
+                pre_pad=10,
                 half=False
             )
-
-            self.model.device = self.device
-            self.model.model.to(self.device)
-            self.model.eval()
+            
             self.model_loaded = True
-
-            print(f"✅ Loaded Real-ESRGAN model successfully")
+            print(f"[OK] Loaded Real-ESRGAN model successfully")
 
         except Exception as e:
+            import traceback
             print(f"Warning: Failed to load Real-ESRGAN model: {e}")
+            traceback.print_exc()
             print("Using placeholder (no actual enhancement)")
             self.model = 'placeholder'
             self.model_loaded = True

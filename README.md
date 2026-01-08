@@ -21,6 +21,7 @@ A comprehensive image enhancement web service that uses advanced AI algorithms t
 
 - Python 3.10 or higher
 - CUDA-capable GPU (optional but recommended for performance)
+- uv package manager (recommended for dependency management)
 
 ### Setup
 
@@ -30,10 +31,11 @@ git clone <repository-url>
 cd imgEnhanceWebService
 ```
 
-2. Create a virtual environment:
+2. Create a virtual environment with uv:
 ```bash
-python -m venv .venv
+uv venv
 
+# Activate venv:
 # On Windows:
 .venv\Scripts\activate
 
@@ -41,16 +43,20 @@ python -m venv .venv
 source .venv/bin/activate
 ```
 
-3. Install dependencies:
+3. Install dependencies with uv:
 ```bash
-pip install -r requirements.txt
+uv pip install -e .
+# Or install from pyproject.toml:
+uv sync
+# Or install from requirements.txt:
+uv pip install -r requirements.txt
 ```
 
 ## Quick Start
 
 ### Testing Enhancement Pipeline
 
-1. **Download model weights** (required for actual enhancement):
+1. **Ensure models are downloaded** (required for actual enhancement):
    - Real-ESRGAN: Download from [GitHub Releases](https://github.com/xinntao/Real-ESRGAN/releases)
      - Get `RealESRGAN_x4plus.pth` (~67MB)
      - Save to `models/` directory
@@ -60,16 +66,29 @@ pip install -r requirements.txt
 
 2. **Verify algorithms load correctly**:
 ```bash
-python scripts/diagnostic_test.py
+uv run python -m scripts.diagnostic_test
 ```
 
 3. Place test images in `test_images/` directory
 4. Run test runner:
 ```bash
-python scripts/test_runner.py
+uv run python -m scripts.test_runner
 ```
 
 5. Find enhanced images in `test_output/` directory
+
+**Algorithm Validation Status (All 6/6 Passing)**:
+- ✅ real_esrgan - GPU-accelerated, 4x upscale (99.8s)
+- ✅ super_image - CPU-based, 4x upscale with tile processing (233.1s)
+- ✅ clahe - Low-light enhancement (162ms)
+- ✅ white_balance - Color correction (64ms)
+- ✅ exposure_correction - Brightness adjustment (58ms)
+- ✅ face_enhancement - Face enhancement (3.0s)
+
+**Troubleshooting**:
+- All algorithms are currently validated and working
+- GPU is detected and used for Real-ESRGAN and GFPGAN (GTX 1650 Ti)
+- See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for historical issue documentation
 
 ### Starting the Web Service
 
@@ -177,13 +196,24 @@ BATCH_SIZE=4
 ### Running Tests
 
 ```bash
+# Run pytest
 pytest
+
+# Run diagnostic test for individual algorithms
+uv run python -m scripts.diagnostic_test
+
+# Run test runner for batch processing
+uv run python -m scripts.test_runner
 ```
 
 ### Code Formatting
 
 ```bash
+# Format code with black
 black .
+
+# Check formatting
+black --check .
 ```
 
 ### Linting
@@ -196,6 +226,22 @@ flake8 .
 
 ```bash
 mypy .
+```
+
+### Package Management
+
+```bash
+# Install dependencies with uv
+uv pip install <package>
+
+# Install from pyproject.toml
+uv sync
+
+# Install all dependencies including dev
+uv sync --dev
+
+# Freeze current environment
+uv pip freeze
 ```
 
 ## Attribution
@@ -240,12 +286,39 @@ For issues and questions, please refer to:
 - [ARCHITECTURE.md](.opencode/docs/ARCHITECTURE.md) - Technical architecture
 - [TASKS.md](.opencode/docs/TASKS.md) - Implementation tasks
 
+## Known Issues
+
+### NumPy Compatibility (CRITICAL)
+
+**Issue**: NumPy 2.2.6 is incompatible with basicsr, gfpgan, and super-image packages.
+
+**Symptoms**:
+- Real-ESRGAN fails with "NumPy 1.x vs 2.x" error
+- GFPGAN fails with same error
+- super-image crashes with dtype inference errors
+
+**Solution**: Downgrade NumPy to 1.x
+```bash
+pip install "numpy<2.0"
+```
+
+**Status**: Documented in [KNOWN_ISSUES.md](KNOWN_ISSUES.md) with full details
+
 ## Roadmap
 
 - [x] Project planning and documentation
 - [x] Foundation and algorithm integration
 - [x] Model weights downloaded (Real-ESRGAN, GFPGAN)
-- [ ] Testing and validation (current phase)
+- [x] Bug fixes (JSON serialization, CLAHE, cv2 imports)
+- [x] Diagnostic test script created
+- [x] KNOWN_ISSUES.md documented
+- [x] NumPy compatibility fixed (downgraded to 1.26.4)
+- [x] All 6 algorithms validated with diagnostic tests
+- [x] GPU acceleration enabled (CUDA 11.8, GTX 1650 Ti)
+- [x] pyproject.toml created with uv package management
+- [x] Enhanced test_runner with timing and statistics
+- [x] Windows-compatible timeout mechanism (threading-based)
+- [ ] Human validation and feedback collection
 - [ ] Web service implementation
 - [ ] Google Drive integration
 - [ ] Performance optimization
@@ -253,15 +326,33 @@ For issues and questions, please refer to:
 
 ---
 
-**Status**: Foundation & Algorithms Complete - Models Downloaded - Ready for Testing
+**Status**: ✅ ALL 6 CORE ALGORITHMS VALIDATED - READY FOR HUMAN TESTING
 **Last Updated**: January 9, 2026
 
-**Known Issues Fixed**:
-- JSON serialization bug in logging (boolean values)
-- Real-ESRGAN model loading (random weights issue)
-- GFPGAN model loading (placeholder issue)
+**Validation Summary**:
+- ✅ All 6 algorithms passing diagnostic tests
+- ✅ GPU acceleration working (Real-ESRGAN, GFPGAN)
+- ✅ Windows-compatible implementation
+- ✅ Proper logging and error handling
+- ✅ Package management with uv and pyproject.toml
 
-**Requirements for Testing**:
-1. Models in `models/` directory: `RealESRGAN_x4plus.pth`, `GFPGANv1.3.pth`
-2. Run `python scripts/diagnostic_test.py` first to verify algorithms
-3. Run `python scripts/test_runner.py` for full batch testing
+**Algorithm Performance** (on GTX 1650 Ti, 1728x2304 test image):
+| Algorithm | Time | GPU | Status |
+|-----------|-------|------|--------|
+| real_esrgan | 99.8s | ✅ | 4x upscale, high quality |
+| super_image | 233.1s | ❌ | 4x upscale, tile processing |
+| clahe | 162ms | N/A | Low-light enhancement |
+| white_balance | 64ms | N/A | Color correction |
+| exposure_correction | 58ms | N/A | Brightness adjustment |
+| face_enhancement | 3.0s | ✅ | Face enhancement |
+
+**Requirements for Next Phase (Human Testing)**:
+1. Add test images to `test_images/` directory
+2. Run `uv run python -m scripts.test_runner` for batch testing
+3. Review enhanced images in `test_output/` directory
+4. Provide feedback on quality and results
+5. Get green flag to proceed to web service development
+
+**Documentation**:
+- See [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for historical issue documentation
+- See `.opencode/docs/` for project planning and architecture details

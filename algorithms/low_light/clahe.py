@@ -47,7 +47,7 @@ class CLAHEEnhancer(BaseEnhancer):
         # Create CLAHE object
         clahe = cv2.createCLAHE(
             clipLimit=self.clip_limit,
-            tileGridSize=self.tile_grid_size[0] * self.tile_grid_size[1]
+            tileGridSize=self.tile_grid_size
         )
 
         # Apply CLAHE

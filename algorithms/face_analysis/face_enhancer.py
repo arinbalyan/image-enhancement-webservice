@@ -52,7 +52,7 @@ class FaceEnhancer(BaseEnhancer):
             )
             self.model_loaded = True
 
-            print(f"✅ Loaded GFPGAN model successfully")
+            print(f"[OK] Loaded GFPGAN model successfully")
 
         except Exception as e:
             print(f"Warning: Failed to load GFPGAN: {e}")
