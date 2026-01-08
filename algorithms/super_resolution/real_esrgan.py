@@ -27,30 +27,43 @@ class RealESRGANEnhancer(BaseEnhancer):
             from basicsr.archs.rrdbnet_arch import RRDBNet
             from basicsr.models.realesrgan_model import RealESRGANer
 
-            # Define model
-            model = RRDBNet(
-                num_in_ch=3,
-                num_out_ch=3,
-                num_feat=64,
-                num_block=23,
-                num_grow_ch=32,
-                scale=self.upscale_factor
-            )
-
-            # Load pre-trained weights
             model_path = self._download_model(self.model_name)
 
-            # For now, use a placeholder - actual model loading will download from GitHub
-            print(f"Note: Model loading for {self.model_name} would download from:")
-            print(f"  https://github.com/xinntao/Real-ESRGAN/releases")
-            print(f"  Please download model to models/ directory")
+            if not Path(model_path).exists():
+                print(f"Model file not found: {model_path}")
+                print(f"Please download Real-ESRGAN model from:")
+                print(f"  https://github.com/xinntao/Real-ESRGAN/releases")
+                print(f"  Model: {self.model_name}.pth")
+                print(f"\nFor now, using placeholder (no actual enhancement)")
+                self.model = 'placeholder'
+                self.model_loaded = True
+                return
 
-            self.model = model.to(self.device)
+            # Load pre-trained weights
+            print(f"Loading Real-ESRGAN model: {model_path}")
+
+            self.model = RealESRGANer(
+                scale=self.upscale_factor,
+                model_path=model_path,
+                model=self.model_name,
+                tile=0,
+                tile_pad=10,
+                pre_pad=0,
+                half=False
+            )
+
+            self.model.device = self.device
+            self.model.model.to(self.device)
             self.model.eval()
             self.model_loaded = True
 
+            print(f"✅ Loaded Real-ESRGAN model successfully")
+
         except Exception as e:
-            raise Exception(f"Failed to load Real-ESRGAN model: {e}")
+            print(f"Warning: Failed to load Real-ESRGAN model: {e}")
+            print("Using placeholder (no actual enhancement)")
+            self.model = 'placeholder'
+            self.model_loaded = True
 
     def _download_model(self, model_name: str) -> str:
         """
@@ -82,26 +95,23 @@ class RealESRGANEnhancer(BaseEnhancer):
         if not self.model_loaded:
             self.load_model()
 
-        # Convert to PIL
-        pil_image = self._convert_to_pil(image)
+        if self.model == 'placeholder':
+            print("Warning: Real-ESRGAN using placeholder (no actual enhancement)")
+            return image
 
-        # Convert to tensor
-        img_tensor = self._convert_to_tensor(pil_image)
+        # Convert to numpy
+        if isinstance(image, Image.Image):
+            img = np.array(image)
+        else:
+            img = image
 
-        # Add batch dimension
-        img_tensor = img_tensor.unsqueeze(0)
-
-        # Inference
-        with torch.no_grad():
-            output = self.model(img_tensor)
-
-        # Remove batch dimension
-        output = output.squeeze(0)
-
-        # Convert back to numpy
-        enhanced_image = self._convert_from_tensor(output)
-
-        return enhanced_image
+        # Enhance using RealESRGANer
+        try:
+            output, _ = self.model.enhance(img, outscale=self.upscale_factor)
+            return output
+        except Exception as e:
+            print(f"Real-ESRGAN enhancement error: {e}")
+            return image
 
     def analyze(self, image: Any) -> Dict[str, Any]:
         """

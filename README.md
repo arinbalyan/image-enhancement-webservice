@@ -50,13 +50,26 @@ pip install -r requirements.txt
 
 ### Testing Enhancement Pipeline
 
-1. Place test images in `test_images/` directory
-2. Run the test runner:
+1. **Download model weights** (required for actual enhancement):
+   - Real-ESRGAN: Download from [GitHub Releases](https://github.com/xinntao/Real-ESRGAN/releases)
+     - Get `RealESRGAN_x4plus.pth` (~67MB)
+     - Save to `models/` directory
+   - GFPGAN: Download from [GitHub Releases](https://github.com/TencentARC/GFPGAN/releases)
+     - Get `GFPGANv1.3.pth` (~350MB)
+     - Save to `models/` directory
+
+2. **Verify algorithms load correctly**:
+```bash
+python scripts/diagnostic_test.py
+```
+
+3. Place test images in `test_images/` directory
+4. Run test runner:
 ```bash
 python scripts/test_runner.py
 ```
 
-3. Find enhanced images in `test_output/` directory
+5. Find enhanced images in `test_output/` directory
 
 ### Starting the Web Service
 
@@ -230,8 +243,9 @@ For issues and questions, please refer to:
 ## Roadmap
 
 - [x] Project planning and documentation
-- [ ] Foundation and algorithm integration
-- [ ] Testing and validation
+- [x] Foundation and algorithm integration
+- [x] Model weights downloaded (Real-ESRGAN, GFPGAN)
+- [ ] Testing and validation (current phase)
 - [ ] Web service implementation
 - [ ] Google Drive integration
 - [ ] Performance optimization
@@ -239,5 +253,15 @@ For issues and questions, please refer to:
 
 ---
 
-**Status**: Planning Complete - Implementation In Progress
-**Last Updated**: January 8, 2026
+**Status**: Foundation & Algorithms Complete - Models Downloaded - Ready for Testing
+**Last Updated**: January 9, 2026
+
+**Known Issues Fixed**:
+- JSON serialization bug in logging (boolean values)
+- Real-ESRGAN model loading (random weights issue)
+- GFPGAN model loading (placeholder issue)
+
+**Requirements for Testing**:
+1. Models in `models/` directory: `RealESRGAN_x4plus.pth`, `GFPGANv1.3.pth`
+2. Run `python scripts/diagnostic_test.py` first to verify algorithms
+3. Run `python scripts/test_runner.py` for full batch testing

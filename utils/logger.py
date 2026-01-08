@@ -49,7 +49,7 @@ class EnhancementFormatter(logging.Formatter):
             if duration != 'N/A':
                 formatted += f"Duration: {duration}ms | "
             if details:
-                formatted += f"Details: {json.dumps(details)}"
+                formatted += f"Details: {json.dumps(details, default=str)}"
             else:
                 formatted = formatted.rstrip(" | ")
         else:
@@ -97,7 +97,7 @@ class JSONFormatter(logging.Formatter):
         if record.exc_info:
             log_entry['exception'] = self.formatException(record.exc_info)
 
-        return json.dumps(log_entry)
+        return json.dumps(log_entry, default=str)
 
 
 class EnhancementLogger:

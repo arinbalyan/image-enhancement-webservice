@@ -7,7 +7,9 @@ Based on face enhancement in Real-ESRGAN repo.
 from typing import Dict, Any
 import torch
 import numpy as np
+import cv2
 from PIL import Image
+from pathlib import Path
 
 from algorithms.base_enhancer import BaseEnhancer
 
@@ -23,17 +25,34 @@ class FaceEnhancer(BaseEnhancer):
     def load_model(self) -> None:
         """Load GFPGAN model."""
         try:
-            from facexlib import face_restoration
+            from gfpgan import GFPGANer
+
+            # Check for model weights
+            models_dir = Path("models")
+            models_dir.mkdir(exist_ok=True)
+
+            model_path = models_dir / "GFPGANv1.3.pth"
+
+            if not model_path.exists():
+                print(f"GFPGAN model not found: {model_path}")
+                print("Please download from: https://github.com/TencentARC/GFPGAN/releases")
+                print(f"For now, using placeholder (no actual enhancement)")
+                self.model = 'placeholder'
+                self.model_loaded = True
+                return
 
             # Load GFPGAN
-            self.model = face_restoration.FaceRestore(
-                upscale_factor=1,
-                model_path=None,
+            self.model = GFPGANer(
+                model_path=str(model_path),
+                upscale=1,
+                arch='clean',
+                channel_multiplier=2,
+                bg_upsampler=None,
                 device=self.device
             )
             self.model_loaded = True
 
-            print(f"Loaded GFPGAN model on {self.device}")
+            print(f"✅ Loaded GFPGAN model successfully")
 
         except Exception as e:
             print(f"Warning: Failed to load GFPGAN: {e}")
@@ -54,37 +73,29 @@ class FaceEnhancer(BaseEnhancer):
         if not self.model_loaded:
             self.load_model()
 
-        # Convert to PIL
-        pil_image = self._convert_to_pil(image)
+        # Convert to numpy
+        if isinstance(image, Image.Image):
+            img = np.array(image)
+        else:
+            img = image
 
         if self.model == 'placeholder':
-            # Placeholder enhancement (no actual enhancement)
+            print("Warning: Face enhancer using placeholder (no actual enhancement)")
             return image
-        else:
+
+        try:
             # Use GFPGAN to enhance
-            try:
-                import torchvision.transforms as T
-
-                # Transform for GFPGAN
-                transform = T.Compose([
-                    T.ToTensor()
-                ])
-
-                # Convert image to tensor
-                img_tensor = transform(pil_image).to(self.device)
-
-                # Enhance
-                with torch.no_grad():
-                    restored = self.model(img_tensor)
-
-                # Convert back to PIL
-                restored_img = T.ToPILImage()(restored.cpu())
-
-                return restored_img
-
-            except Exception as e:
-                print(f"Face enhancement error: {e}")
-                return image
+            _, _, output = self.model.enhance(
+                img,
+                has_aligned=False,
+                only_center_face=False,
+                paste_back=True,
+                weight=0.5
+            )
+            return output
+        except Exception as e:
+            print(f"Face enhancement error: {e}")
+            return image
 
     def analyze(self, image: Any) -> Dict[str, Any]:
         """
