@@ -66,20 +66,26 @@ def run_tests(input_dir: str = 'test_images', output_dir: str = 'test_output'):
         print(f"\n[{i}/{len(images)}] Processing: {Path(image_path).name}")
 
         try:
+            # Log workflow start
+            logger.log_enhancement(
+                image_name=Path(image_path).name,
+                algorithm='workflow_start',
+                duration_ms=0,
+                details={'input_path': image_path, 'output_dir': output_dir}
+            )
+
             # Analyze image first
             analysis = manager.image_analyzer.analyze(image_path)
+            logger.log_analysis(Path(image_path).name, analysis)
 
-            print(f"  Resolution: {analysis['resolution']['width']}x{analysis['resolution']['height']}")
-            print(f"  Brightness: {analysis['brightness']['mean']:.3f}")
-            print(f"  Faces: {analysis['faces']['count']}")
-
-            # Print recommendations
+            # Print recommendations to console
             print(f"  Recommendations: {len(analysis['recommendations'])} algorithm(s)")
             for rec in analysis['recommendations']:
                 print(f"    - {rec['algorithm']} (confidence: {rec['confidence']:.2f})")
 
             # Enhance image
             print("  Enhancing...")
+
             output_path = manager.enhance_image(
                 image_path=image_path,
                 output_dir=output_dir,

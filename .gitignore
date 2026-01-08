@@ -3,7 +3,7 @@
 venv/
 env/
 .opencode
-
+context.md
 # Python
 __pycache__/
 *.py[cod]

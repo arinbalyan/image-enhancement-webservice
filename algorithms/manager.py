@@ -297,9 +297,55 @@ class AlgorithmManager:
             ValueError: If algorithm not found
         """
         # Map algorithm names to classes
-        # This is a placeholder - actual implementation will load real algorithms
-        from algorithms.base_enhancer import DummyEnhancer
-        return DummyEnhancer({})
+        try:
+            if algorithm_name == 'real_esrgan':
+                from algorithms.super_resolution.real_esrgan import RealESRGANEnhancer
+                return RealESRGANEnhancer(self._get_algorithm_config('super_resolution'))
+            elif algorithm_name == 'super_image':
+                from algorithms.super_resolution.super_image import SuperImageEnhancer
+                return SuperImageEnhancer(self._get_algorithm_config('super_resolution'))
+            elif algorithm_name == 'clahe':
+                from algorithms.low_light.clahe import CLAHEEnhancer
+                return CLAHEEnhancer(self._get_algorithm_config('low_light'))
+            elif algorithm_name == 'white_balance':
+                from algorithms.color_correction.white_balance import WhiteBalanceEnhancer
+                return WhiteBalanceEnhancer(self._get_algorithm_config('color_correction'))
+            elif algorithm_name == 'exposure_correction':
+                from algorithms.color_correction.exposure import ExposureCorrectionEnhancer
+                return ExposureCorrectionEnhancer(self._get_algorithm_config('color_correction'))
+            elif algorithm_name == 'face_enhancement':
+                from algorithms.face_analysis.face_enhancer import FaceEnhancer
+                return FaceEnhancer(self._get_algorithm_config('face_analysis'))
+            else:
+                # Fallback to dummy enhancer for unimplemented algorithms
+                from algorithms.base_enhancer import DummyEnhancer
+                return DummyEnhancer({})
+        except ImportError as e:
+            print(f"Warning: Could not import {algorithm_name}: {e}")
+            print(f"Using dummy enhancer as fallback")
+            from algorithms.base_enhancer import DummyEnhancer
+            return DummyEnhancer({})
+
+    def _get_algorithm_config(self, algorithm_type: str) -> Dict[str, Any]:
+        """
+        Get configuration for algorithm type.
+
+        Args:
+            algorithm_type: Type of algorithm
+
+        Returns:
+            Dict: Configuration
+        """
+        from config.settings import get_algorithm_config
+        config = get_algorithm_config(self.settings, algorithm_type)
+
+        # Convert to dict
+        return {
+            'name': config.name,
+            'enabled': config.enabled,
+            'priority': config.priority,
+            'parameters': config.parameters
+        }
 
     def get_available_algorithms(self) -> List[str]:
         """
