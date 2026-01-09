@@ -523,6 +523,122 @@ When reporting issues, please include:
 
 See `KNOWN_ISSUES.md` for a list of known issues and their workarounds.
 
+## Deployment: HuggingFace Spaces
+
+This project is designed to deploy to **HuggingFace Spaces** for free hosting with GPU support.
+
+### Why HuggingFace Spaces?
+
+| Resource | Render Free | HuggingFace Free | Required |
+|----------|-------------|------------------|----------|
+| RAM | 512 MB | 16 GB | 1.5 GB |
+| Storage | 512 MB | 50 GB | 700 MB |
+| GPU | None | A10G/T4 free | Recommended |
+
+### Deploying to HuggingFace Spaces
+
+#### 1. Create a HuggingFace Account
+- Go to https://huggingface.co
+- Sign up for a free account
+
+#### 2. Create a New Space
+- Navigate to https://huggingface.co/new-space
+- Choose **Docker** template (for FastAPI)
+- Select GPU: **A10G** (free tier) or **T4**
+- Give your space a name (e.g., `img-enhance-service`)
+
+#### 3. Deploy Your Application
+```bash
+# Clone your Space repository
+git clone https://huggingface.co/spaces/<your-username>/img-enhance-service
+
+# Copy your project files
+cp -r /path/to/imgEnhanceWebService/* img-enhance-service/
+
+# Push changes
+cd img-enhance-service
+git add .
+git commit -m "Deploy image enhancement service"
+git push
+```
+
+#### 4. Configuration for HuggingFace
+
+Create a `Dockerfile` for your Space:
+
+```dockerfile
+FROM python:3.10-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Expose port
+EXPOSE 7860
+
+# Run the application
+CMD ["uvicorn", "web_service.app:app", "--host", "0.0.0.0", "--port", "7860"]
+```
+
+Create a `packages.txt` for system dependencies:
+```txt
+build-essential
+```
+
+#### 5. Environment Variables
+
+Set these in your Space settings:
+- `MAX_IMAGE_SIZE_MB=50`
+- `ENABLE_GPU=True`
+- `HF_TOKEN=your_huggingface_token` (if needed)
+
+#### 6. Test Your Deployment
+
+After deployment, your API will be available at:
+- `https://<your-username>-img-enhance-service.hf.space/docs` (Swagger UI)
+- `https://<your-username>-img-enhance-service.hf.space/api/v1/enhance` (API endpoint)
+
+### Local Development vs HuggingFace
+
+**Local Development:**
+```bash
+# Run locally for testing
+uvicorn web_service.app:app --reload
+```
+
+**HuggingFace Spaces:**
+- Automatic deployment on push
+- GPU available for inference
+- Public API access
+- Sleep after inactivity (configurable)
+
+### Troubleshooting Deployment
+
+**Memory Issues:**
+- Reduce `MAX_IMAGE_SIZE_MB` in settings
+- Use CPU-only mode if GPU unavailable
+- Implement image tiling for very large images
+
+**Cold Starts:**
+- HuggingFace may sleep after inactivity
+- First request after sleep may be slow
+- Keep-alive pings can prevent sleeping
+
+**GPU Not Available:**
+- Check Space GPU settings
+- Verify model fits in GPU memory
+- Fall back to CPU processing if needed
+
 ## Getting Help
 
 If you need help:
