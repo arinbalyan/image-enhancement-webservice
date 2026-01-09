@@ -200,7 +200,7 @@ class AlgorithmManager:
 
             # Load required algorithms
             for alg_config in selected_algorithms:
-                alg_name = alg_config['algorithm']
+                alg_name = alg_config['sub_algorithm']
                 if alg_name not in self.loaded_algorithms:
                     self.load_algorithm(alg_name)
 
@@ -208,7 +208,7 @@ class AlgorithmManager:
             enhanced_image = image.copy() if hasattr(image, 'copy') else image
 
             for alg_config in selected_algorithms:
-                alg_name = alg_config['algorithm']
+                alg_name = alg_config['sub_algorithm']
 
                 if alg_name not in self.algorithms:
                     self.logger.log_error(
@@ -220,25 +220,32 @@ class AlgorithmManager:
 
                 enhancer = self.algorithms[alg_name]
 
+                # Get parameters from algorithm config
+                alg_params = alg_config.get('parameters', {})
+                upscale_factor = alg_params.get('scale', 4)
+                enhance_level = alg_params.get('enhance_level', 'medium')
+
                 # Apply enhancement
                 with self.logger.log_operation(
                     operation_name=alg_name,
                     image_name=image_name,
                     algorithm=alg_name,
-                    details=alg_config.get('parameters', {})
+                    details=alg_params
                 ) as (log_success, log_error):
                     try:
                         # Start timing
                         alg_start = time.time()
 
-                        # Apply enhancement
-                        enhanced_image = enhancer.enhance(enhanced_image)
+                        # Apply enhancement with parameters
+                        enhanced_image = enhancer.enhance(enhanced_image, upscale_factor=upscale_factor, enhance_level=enhance_level)
 
                         # Log success
                         duration_ms = (time.time() - alg_start) * 1000
                         log_success({
                             'input_size': image.shape if hasattr(image, 'shape') else 'N/A',
-                            'output_size': enhanced_image.shape if hasattr(enhanced_image, 'shape') else 'N/A'
+                            'output_size': enhanced_image.shape if hasattr(enhanced_image, 'shape') else 'N/A',
+                            'upscale_factor': upscale_factor,
+                            'enhance_level': enhance_level
                         })
 
                     except Exception as e:

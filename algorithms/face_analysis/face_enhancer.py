@@ -60,12 +60,14 @@ class FaceEnhancer(BaseEnhancer):
             self.model = 'placeholder'
             self.model_loaded = True
 
-    def enhance(self, image: Any) -> Any:
+    def enhance(self, image: Any, upscale_factor: int = 4, enhance_level: str = 'medium') -> Any:
         """
         Enhance faces in image.
 
         Args:
             image: Input image (numpy array or PIL Image)
+            upscale_factor: Factor by which to upscale the image (default: 4)
+            enhance_level: Enhancement level (default: 'medium')
 
         Returns:
             Enhanced image (numpy array or PIL Image)

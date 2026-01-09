@@ -130,12 +130,14 @@ class RealESRGANEnhancer(BaseEnhancer):
         model_path = models_dir / f"{model_name}.pth"
         return str(model_path)
 
-    def enhance(self, image: Any) -> Any:
+    def enhance(self, image: Any, upscale_factor: int = 4, enhance_level: str = 'medium') -> Any:
         """
         Enhance image using Real-ESRGAN.
 
         Args:
             image: Input image (numpy array or PIL Image)
+            upscale_factor: Factor by which to upscale the image (default: 4)
+            enhance_level: Enhancement level (default: 'medium')
 
         Returns:
             Enhanced image (numpy array or PIL Image)
@@ -143,7 +145,7 @@ class RealESRGANEnhancer(BaseEnhancer):
         if not self.model_loaded:
             self.load_model()
 
-        if self.model == 'placeholder':
+        if self.model == 'placeholder' or self.model is None:
             print("Warning: Real-ESRGAN using placeholder (no actual enhancement)")
             return image
 
@@ -153,9 +155,9 @@ class RealESRGANEnhancer(BaseEnhancer):
         else:
             img = image
 
-        # Enhance using RealESRGANer
+        # Enhance using RealESRGANer with passed upscale_factor
         try:
-            output, _ = self.model.enhance(img, outscale=self.upscale_factor)
+            output, _ = self.model.enhance(img, outscale=upscale_factor)
             return output
         except Exception as e:
             print(f"Real-ESRGAN enhancement error: {e}")

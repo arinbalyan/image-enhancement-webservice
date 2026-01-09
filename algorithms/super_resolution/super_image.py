@@ -39,18 +39,23 @@ class SuperImageEnhancer(BaseEnhancer):
         except Exception as e:
             raise Exception(f"Failed to load super-image model: {e}")
 
-    def enhance(self, image: Any) -> Any:
+    def enhance(self, image: Any, upscale_factor: int = 4, enhance_level: str = 'medium') -> Any:
         """
         Enhance image using super-image model.
 
         Args:
             image: Input image (numpy array or PIL Image)
+            upscale_factor: Factor by which to upscale the image (default: 4)
+            enhance_level: Enhancement level (default: 'medium')
 
         Returns:
             Enhanced image (numpy array or PIL Image)
         """
         if not self.model_loaded:
             self.load_model()
+
+        # Use passed upscale_factor instead of self.upscale_factor
+        actual_scale = upscale_factor if upscale_factor else self.upscale_factor
 
         # Convert to PIL Image if numpy
         if isinstance(image, np.ndarray):
@@ -65,7 +70,7 @@ class SuperImageEnhancer(BaseEnhancer):
 
         if h > max_tile_size or w > max_tile_size:
             print(f"Using tile-based processing for large image ({h}x{w})")
-            return self._enhance_tiled(np.array(pil_image))
+            return self._enhance_tiled(np.array(pil_image), actual_scale)
 
         # For small images, process directly using model's built-in method
         try:
@@ -88,7 +93,7 @@ class SuperImageEnhancer(BaseEnhancer):
             # Fallback to manual conversion
             return self._enhance_direct(np.array(pil_image))
 
-    def _enhance_direct(self, image: np.ndarray) -> np.ndarray:
+    def _enhance_direct(self, image: np.ndarray, scale: int = 4) -> np.ndarray:
         """Enhance small image directly (fallback method)."""
         from super_image import ImageLoader
 
@@ -127,8 +132,8 @@ class SuperImageEnhancer(BaseEnhancer):
             output_np = np.clip(output_np, 0, 255).astype(np.uint8)
 
         return output_np
-    
-    def _enhance_tiled(self, image: np.ndarray) -> np.ndarray:
+
+    def _enhance_tiled(self, image: np.ndarray, scale: int = 4) -> np.ndarray:
         """Enhance large image using tile-based processing."""
         import cv2
         from super_image import ImageLoader

@@ -20,12 +20,14 @@ class CLAHEEnhancer(BaseEnhancer):
         self.clip_limit = config.get('clip_limit', 2.0)
         self.tile_grid_size = config.get('tile_grid_size', (8, 8))
 
-    def enhance(self, image: Any) -> Any:
+    def enhance(self, image: Any, upscale_factor: int = 4, enhance_level: str = 'medium') -> Any:
         """
         Enhance low-light image using CLAHE.
 
         Args:
             image: Input image (numpy array or PIL Image)
+            upscale_factor: Factor by which to upscale the image (default: 4)
+            enhance_level: Enhancement level (default: 'medium')
 
         Returns:
             Enhanced image (numpy array or PIL Image)

@@ -27,12 +27,14 @@ class WhiteBalanceEnhancer(BaseEnhancer):
         self.model_loaded = True
         print("Note: Using simple white balance (trained models would need to be downloaded)")
 
-    def enhance(self, image: Any) -> Any:
+    def enhance(self, image: Any, upscale_factor: int = 4, enhance_level: str = 'medium') -> Any:
         """
         Apply white balance correction.
 
         Args:
             image: Input image (numpy array or PIL Image)
+            upscale_factor: Factor by which to upscale the image (default: 4)
+            enhance_level: Enhancement level (default: 'medium')
 
         Returns:
             Enhanced image (numpy array or PIL Image)

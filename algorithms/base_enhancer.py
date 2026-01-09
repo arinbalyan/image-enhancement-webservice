@@ -28,12 +28,14 @@ class BaseEnhancer(ABC):
         self.model_loaded = False
 
     @abstractmethod
-    def enhance(self, image: Union[np.ndarray, Image.Image]) -> Union[np.ndarray, Image.Image]:
+    def enhance(self, image: Union[np.ndarray, Image.Image], upscale_factor: int = 4, enhance_level: str = 'medium') -> Union[np.ndarray, Image.Image]:
         """
         Enhance an image.
 
         Args:
             image: Input image (numpy array or PIL Image)
+            upscale_factor: Factor by which to upscale the image (default: 4)
+            enhance_level: Enhancement level (default: 'medium')
 
         Returns:
             Enhanced image (numpy array or PIL Image)
@@ -365,7 +367,7 @@ class BaseEnhancer(ABC):
 class DummyEnhancer(BaseEnhancer):
     """Dummy enhancer for testing purposes."""
 
-    def enhance(self, image: Union[np.ndarray, Image.Image]) -> Union[np.ndarray, Image.Image]:
+    def enhance(self, image: Union[np.ndarray, Image.Image], upscale_factor: int = 4, enhance_level: str = 'medium') -> Union[np.ndarray, Image.Image]:
         """Return image unchanged."""
         return image
 
