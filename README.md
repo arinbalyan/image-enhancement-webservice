@@ -1,5 +1,12 @@
 # Image Enhancement Web Service
 
+[![GitHub Stars](https://img.shields.io/github/stars/arinbalyan/image-enhancement-webservice)](https://github.com/arinbalyan/image-enhancement-webservice/stargazers)
+[![GitHub Issues](https://img.shields.io/github/issues/arinbalyan/image-enhancement-webservice)](https://github.com/arinbalyan/image-enhancement-webservice/issues)
+[![Python Version](https://img.shields.io/badge/python-3.10-blue)](https://python.org)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.128-green)](https://fastapi.tiangolo.com)
+[![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
+[![HuggingFace Spaces](https://img.shields.io/badge/HuggingFace--spaces-blue)](https://huggingface.co)
+
 A comprehensive image enhancement web service that uses advanced AI algorithms to enhance mobile phone photos. The system provides modular enhancement capabilities including super-resolution (16x for small images, 4x for normal), low-light enhancement, white balancing, face analysis, and color grading.
 
 ## Features
@@ -53,6 +60,50 @@ uv pip install -r requirements.txt
 ```
 
 ## Quick Start
+
+### HuggingFace Spaces Deployment (RECOMMENDED)
+
+**Why HuggingFace Spaces?**
+- ✅ 16GB RAM (vs 512MB on Render free)
+- ✅ 50GB storage (vs 512MB on Render free)
+- ✅ Free GPU available (A10G/T4)
+- ✅ Designed for ML apps
+
+#### 1. Create HuggingFace Account
+- Go to https://huggingface.co
+- Sign up for a free account
+
+#### 2. Create a New Space
+- Navigate to https://huggingface.co/new-space
+- Choose **Docker** template
+- Select GPU: **A10G** (free tier) or **T4**
+- Space name: `img-enhance-service`
+
+#### 3. Deploy Your Code
+
+```bash
+# Clone your Space repository
+git clone https://huggingface.co/spaces/<your-username>/img-enhance-service
+
+# Copy your project files
+cp -r /path/to/imgEnhanceWebService/* img-enhance-service/
+
+# Push changes
+cd img-enhance-service
+git add .
+git commit -m "Deploy image enhancement service"
+git push
+```
+
+Your API will be available at:
+- `https://<your-username>-img-enhance-service.hf.space/docs` (Swagger UI)
+- `https://<your-username>-img-enhance-service.hf.space/api/v1/enhance` (API endpoint)
+
+#### 4. Environment Variables
+
+Set these in your Space settings:
+- `MAX_IMAGE_SIZE_MB=50`
+- `ENABLE_GPU=True`
 
 ### Testing Enhancement Pipeline
 

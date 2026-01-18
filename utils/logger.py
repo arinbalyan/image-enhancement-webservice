@@ -329,17 +329,67 @@ class EnhancementLogger:
         yield log_success, log_error
 
 
-def get_logger(settings=None) -> EnhancementLogger:
+def get_logger(name_or_settings=None) -> EnhancementLogger:
     """
     Get or create EnhancementLogger instance.
 
     Args:
-        settings: Optional settings object
+        name_or_settings: Module name (str) or settings object
+            If a string is passed, it's treated as a module name for standard logging.
+            If a settings object is passed, it's used to configure the logger.
 
     Returns:
         EnhancementLogger: Logger instance
     """
-    return EnhancementLogger(settings)
+    if isinstance(name_or_settings, str):
+        # Return a wrapper that provides standard logging interface
+        return _StandardLoggerWrapper(name_or_settings)
+    return EnhancementLogger(name_or_settings)
+
+
+class _StandardLoggerWrapper:
+    """Wrapper to provide standard logging interface."""
+    
+    def __init__(self, name: str):
+        self.logger = logging.getLogger(name)
+        if not self.logger.handlers:
+            handler = logging.StreamHandler(sys.stdout)
+            handler.setFormatter(logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            ))
+            self.logger.addHandler(handler)
+            self.logger.setLevel(logging.INFO)
+    
+    def info(self, msg, *args, **kwargs):
+        self.logger.info(msg, *args, **kwargs)
+    
+    def debug(self, msg, *args, **kwargs):
+        self.logger.debug(msg, *args, **kwargs)
+    
+    def warning(self, msg, *args, **kwargs):
+        self.logger.warning(msg, *args, **kwargs)
+    
+    def error(self, msg, *args, exc_info=False, **kwargs):
+        self.logger.error(msg, *args, exc_info=exc_info, **kwargs)
+    
+    def critical(self, msg, *args, **kwargs):
+        self.logger.critical(msg, *args, **kwargs)
+    
+    def exception(self, msg, *args, **kwargs):
+        self.logger.exception(msg, *args, **kwargs)
+    
+    # Forward EnhancementLogger methods for compatibility
+    def log_enhancement(self, *args, **kwargs):
+        pass
+    
+    def log_analysis(self, *args, **kwargs):
+        pass
+    
+    def log_error(self, *args, **kwargs):
+        pass
+    
+    def log_workflow(self, *args, **kwargs):
+        pass
 
 
 if __name__ == "__main__":
